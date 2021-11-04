@@ -33,7 +33,10 @@ if (process.env.NODE_ENV !== 'production') {
       target
     )
   }
-
+  /**
+   * 判断当前环境是否有浏览器原生的Proxy
+   * @type {boolean}
+   */
   const hasProxy =
     typeof Proxy !== 'undefined' && isNative(Proxy)
 
@@ -51,10 +54,24 @@ if (process.env.NODE_ENV !== 'production') {
       }
     })
   }
-
+  /**
+   * 这里hasHandler 返回是一个bool
+   * 啥情况会出现has呢?
+   * 在我们new Vue(options) options中没有render的时候,或者有render 没有 _withStripped 的时候
+   * SFC的情况下我们不需要指定render,所以必然会走到这个has.
+   * @type {{has(*=, *=): void}}
+   */
   const hasHandler = {
     has (target, key) {
       const has = key in target
+      /**
+       * 给了一堆被允许global的变量,看key在不在其中,看起来应该是在template中允许使用的全局变量
+       * 逻辑是是不是全局被允许的变量 或者 _开头 并且不在$data中的变量
+       *
+       * 比如说Math
+       * 但是有意思的是他返回的是 has || !isAllowed, Math是被允许的,但是进入这个函数后会返回false.
+       * @type {boolean}
+       */
       const isAllowed = allowedGlobals(key) ||
         (typeof key === 'string' && key.charAt(0) === '_' && !(key in target.$data))
       if (!has && !isAllowed) {
@@ -64,7 +81,10 @@ if (process.env.NODE_ENV !== 'production') {
       return has || !isAllowed
     }
   }
-
+  /**
+   * 这里的get 会返回具体的值 或者 undefined 找不到就提示
+   * @type {{get(*=, *=): *}}
+   */
   const getHandler = {
     get (target, key) {
       if (typeof key === 'string' && !(key in target)) {

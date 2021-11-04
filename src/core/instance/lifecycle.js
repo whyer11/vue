@@ -33,7 +33,17 @@ export function initLifecycle (vm: Component) {
   const options = vm.$options
 
   // locate first non-abstract parent
+  /**
+   * 定位到第一个非抽象parent
+   * 这里没有看懂
+   * TODO 为什么要找到options的parent,并且是不抽象的,这个抽不抽象意味着什么?
+   * 有parent,有children,意思就是一个树形咯,这里为什么options也特么是个树形?谁给拼成了树形?
+   * @type {Component}
+   */
   let parent = options.parent
+  /**
+   * 这里判断了parent存不存在,如果不存在的就直接到下面一波初始化
+   */
   if (parent && !options.abstract) {
     while (parent.$options.abstract && parent.$parent) {
       parent = parent.$parent
@@ -41,14 +51,31 @@ export function initLifecycle (vm: Component) {
     parent.$children.push(vm)
   }
 
-  vm.$parent = parent
-  vm.$root = parent ? parent.$root : vm
 
+  vm.$parent = parent
+  /**
+   * 看这个意思parent还有可能没有咯,如果是一个根节点那必然就是没有的所以这个实例的root就是他自己
+   * @type {Component}
+   */
+  vm.$root = parent ? parent.$root : vm
+  /**
+   * 实例的children被初始化
+   * @type {*[]}
+   */
   vm.$children = []
   vm.$refs = {}
-
+  /**
+   * watcher 不出意外应该是 watch方法注入进去的吧
+   * @type {null}
+   * @private
+   */
   vm._watcher = null
   vm._inactive = null
+  /**
+   * 下面都是状态
+   * @type {boolean}
+   * @private
+   */
   vm._directInactive = false
   vm._isMounted = false
   vm._isDestroyed = false

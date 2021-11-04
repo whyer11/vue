@@ -13,9 +13,20 @@ import { extend, mergeOptions, formatComponentName } from '../util/index'
 let uid = 0
 
 export function initMixin (Vue: Class<Component>) {
+  /**
+   * 定义构造函数中调用的this._init函数
+   * 这类型定义的有点东西,Object....
+   * @param options
+   * @private
+   */
   Vue.prototype._init = function (options?: Object) {
     const vm: Component = this
     // a uid
+    /**
+     * 设置一个uid,这里uid就运行时 +1,有点东西,在特定作用域下确实不会重复
+     * @type {number}
+     * @private
+     */
     vm._uid = uid++
 
     let startTag, endTag
@@ -29,6 +40,9 @@ export function initMixin (Vue: Class<Component>) {
     // a flag to avoid this being observed
     vm._isVue = true
     // merge options
+    /**
+     *
+     */
     if (options && options._isComponent) {
       // optimize internal component instantiation
       // since dynamic options merging is pretty slow, and none of the
@@ -42,15 +56,40 @@ export function initMixin (Vue: Class<Component>) {
       )
     }
     /* istanbul ignore else */
+    /**
+     * 这里在开发环境中是加了一层代理,用于增加开发体验,在取实例上变量的时候如果没有的话就进行提示.
+     */
     if (process.env.NODE_ENV !== 'production') {
       initProxy(vm)
     } else {
+      /**
+       * 线上的时候就直接使用自己,不存在中间的proxy了.
+       * @type {Component}
+       * @private
+       */
       vm._renderProxy = vm
     }
     // expose real self
     vm._self = vm
+    /**
+     * 开到这里,其实vue的设计思路和 react差别还是很大的.但是用法却想办法靠在一块
+     * SFC的写法让我有点难以接受,并且还必须是 default导出,太恶心了
+     * 反过来想 SFC这种方式是不是另外一种高内聚的体现呢? React的方式,现在搞出了styled-component这种方式来把样式集成.
+     * SFC则是通过编译的方式解决这个问题,如果可以提高开发者体验,我觉得也不是不行.
+     */
+    /**
+     * 初始化生命周期,其实就是把一些变量注册到vm这个实例上
+     */
     initLifecycle(vm)
+    /**
+     * 初始化事件,也没做啥,就初始化个_events变量, 还用了Object.create(null),为啥? 这么搞出来的对象就是纯对象,不继承Object的任何原型方法
+     * 连 toString都没有.具体要这么干净的{}用来干啥我也不知道
+     */
     initEvents(vm)
+    /**
+     * 初始化render,我的理解好像犯了个错, SFC下到最终运行还是要编译的,具体编译成啥?
+     * 其实还是变成options.render的内容. 蜜汁高内聚
+     */
     initRender(vm)
     callHook(vm, 'beforeCreate')
     initInjections(vm) // resolve injections before data/props

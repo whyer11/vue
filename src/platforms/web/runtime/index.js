@@ -1,5 +1,9 @@
 /* @flow */
-
+/**
+ * 从这里可以看到向外暴露的vue 就是来自于这里
+ *
+ * 这个文件是在对web环境暴露的时候增加的内容
+ */
 import Vue from 'core/index'
 import config from 'core/config'
 import { extend, noop } from 'shared/util'
