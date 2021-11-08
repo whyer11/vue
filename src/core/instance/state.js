@@ -62,7 +62,16 @@ export function initState (vm: Component) {
   }
 }
 
+/**
+ * 初始化props,
+ * @param vm
+ * @param propsOptions
+ */
 function initProps (vm: Component, propsOptions: Object) {
+  /**
+   * 难道是看漏了? 没有看到这个propsData的赋值啊
+   * @type {{}}
+   */
   const propsData = vm.$options.propsData || {}
   const props = vm._props = {}
   // cache prop keys so that future props updates can iterate using Array

@@ -14,6 +14,10 @@ export function handleError (err: Error, vm: any, info: string) {
     if (vm) {
       let cur = vm
       while ((cur = cur.$parent)) {
+        /**
+         * 寻找实例上的errorCaptured hook, 并且每一个父节点都会被运行
+         * 如果运行errCaptured还报错 就运行 globalHandleError
+         */
         const hooks = cur.$options.errorCaptured
         if (hooks) {
           for (let i = 0; i < hooks.length; i++) {
@@ -33,6 +37,15 @@ export function handleError (err: Error, vm: any, info: string) {
   }
 }
 
+/**
+ * 调用生命周期的hook的时候会调用这个方法,并且args是null
+ * @param handler
+ * @param context
+ * @param args
+ * @param vm
+ * @param info
+ * @returns {*}
+ */
 export function invokeWithErrorHandling (
   handler: Function,
   context: any,
@@ -42,6 +55,9 @@ export function invokeWithErrorHandling (
 ) {
   let res
   try {
+    /**
+     *
+     */
     res = args ? handler.apply(context, args) : handler.call(context)
     if (res && !res._isVue && isPromise(res) && !res._handled) {
       res.catch(e => handleError(e, vm, info + ` (Promise/async)`))
@@ -55,6 +71,14 @@ export function invokeWithErrorHandling (
   return res
 }
 
+/**
+ * 这里是运行了 lifecycle还报错后,用这个最后的error handler
+ * 然后还判断一下 全局的config里面有没有errorHandler,参见 https://cn.vuejs.org/v2/api/index.html#errorHandler
+ * @param err
+ * @param vm
+ * @param info
+ * @returns {*}
+ */
 function globalHandleError (err, vm, info) {
   if (config.errorHandler) {
     try {

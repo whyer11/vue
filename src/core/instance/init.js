@@ -92,7 +92,14 @@ export function initMixin (Vue: Class<Component>) {
      */
     initRender(vm)
     callHook(vm, 'beforeCreate')
+    /**
+     * 这里的injection就相当于react的context,意图是要搞一个可以消费指定字段的生产者和消费者,可以贯穿整个树,省得一级级的传递了
+     * 当然 vuex 也提供了差不多的能力, 看到这里 vue 做的还是很多,开发者不一定看源码也能把需求完成
+     *
+     * 这里就是把需要inject的数据全部准备好,这里插个眼 TODO 初始的时候拿到了这些inject,未来provide变化的时候咋整?
+     */
     initInjections(vm) // resolve injections before data/props
+    
     initState(vm)
     initProvide(vm) // resolve provide after data/props
     callHook(vm, 'created')

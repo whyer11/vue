@@ -362,12 +362,25 @@ export function deactivateChildComponent (vm: Component, direct?: boolean) {
 }
 
 export function callHook (vm: Component, hook: string) {
+  /**
+   * 这句话先忽略
+   */
   // #7573 disable dep collection when invoking lifecycle hooks
   pushTarget()
+  /**
+   * 从实例的options中取 比如'beforeCreate' 这样的内容
+   */
   const handlers = vm.$options[hook]
   const info = `${hook} hook`
+  /**
+   * 这里多少有点粗糙了,就判断一下有handlers,然后就去读取handlers.length 认为是一个array like的对象.
+   *
+   */
   if (handlers) {
     for (let i = 0, j = handlers.length; i < j; i++) {
+      /**
+       * 为啥这里调用hook的时候不传递任何参数,因为hook不需要任何参数?
+       */
       invokeWithErrorHandling(handlers[i], vm, null, vm, info)
     }
   }
