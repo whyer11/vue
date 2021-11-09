@@ -85,6 +85,10 @@ function initProps (vm: Component, propsOptions: Object) {
   for (const key in propsOptions) {
     keys.push(key)
     const value = validateProp(key, propsOptions, propsData, vm)
+    /**
+     * istanbul 是一个覆盖率工具,用来表示你的代码的单测覆盖度.
+     * 这里忽略了else 意思就有了if就行了 else不要测试了
+     */
     /* istanbul ignore else */
     if (process.env.NODE_ENV !== 'production') {
       const hyphenatedKey = hyphenate(key)

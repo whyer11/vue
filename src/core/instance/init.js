@@ -99,7 +99,7 @@ export function initMixin (Vue: Class<Component>) {
      * 这里就是把需要inject的数据全部准备好,这里插个眼 TODO 初始的时候拿到了这些inject,未来provide变化的时候咋整?
      */
     initInjections(vm) // resolve injections before data/props
-    
+
     initState(vm)
     initProvide(vm) // resolve provide after data/props
     callHook(vm, 'created')
@@ -117,6 +117,12 @@ export function initMixin (Vue: Class<Component>) {
   }
 }
 
+/**
+ * 我特么就和困惑为啥子就比动态枚举快了,什么是动态枚举,原来init方法里面的mergeOptions是动态枚举啊
+ * 代码是16年写的就是vue才动土的时候写的,因为内部的component不需要外部那么多的options,所以就直接指定使用某一些揪心管理
+ * @param vm
+ * @param options
+ */
 export function initInternalComponent (vm: Component, options: InternalComponentOptions) {
   const opts = vm.$options = Object.create(vm.constructor.options)
   // doing this because it's faster than dynamic enumeration.

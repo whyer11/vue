@@ -67,15 +67,29 @@ function createKeyToOldIdx (children, beginIdx, endIdx) {
   return map
 }
 
+/**
+ * init => vm.$mount => mountComponent => vm._update => vm.__patch__ => createPatchFunction
+ *
+ * @param backend
+ * @returns {(function(*=, *=, *=, *=): (undefined|*))|*}
+ */
 export function createPatchFunction (backend) {
   let i, j
   const cbs = {}
-
+  /**
+   * 参数里面
+   * modules是自己定义的
+   * nodeOps是与dom交互的最基本的几个操作
+   *
+   */
   const { modules, nodeOps } = backend
-
+  /**
+   * 把自己定义的默认的modules 填充在cbs中
+   */
   for (i = 0; i < hooks.length; ++i) {
     cbs[hooks[i]] = []
     for (j = 0; j < modules.length; ++j) {
+
       if (isDef(modules[j][hooks[i]])) {
         cbs[hooks[i]].push(modules[j][hooks[i]])
       }
@@ -401,15 +415,36 @@ export function createPatchFunction (backend) {
     }
   }
 
+  /**
+   * 更新一个vnode的children
+   * 这函数成型的比较早,参数的类型都没有定义
+   * @param parentElm
+   * @param oldCh    之前的children
+   * @param newCh    新children
+   * @param insertedVnodeQueue 这个queue就是个数组,具体里面有啥我也不知道,总之就是在updateChildren和patchNode互相传递
+   * @param removeOnly
+   */
   function updateChildren (parentElm, oldCh, newCh, insertedVnodeQueue, removeOnly) {
+    /**
+     * 大家都从 0开始
+     * @type {number}
+     */
     let oldStartIdx = 0
     let newStartIdx = 0
+    /**
+     * old children 的第一个 和最后的node
+     * @type {number}
+     */
     let oldEndIdx = oldCh.length - 1
     let oldStartVnode = oldCh[0]
     let oldEndVnode = oldCh[oldEndIdx]
+
+
     let newEndIdx = newCh.length - 1
     let newStartVnode = newCh[0]
     let newEndVnode = newCh[newEndIdx]
+
+
     let oldKeyToIdx, idxInOld, vnodeToMove, refElm
 
     // removeOnly is a special flag used only by <transition-group>
@@ -420,32 +455,76 @@ export function createPatchFunction (backend) {
     if (process.env.NODE_ENV !== 'production') {
       checkDuplicateKeys(newCh)
     }
-
+    /**
+     * start 只要还小于等于 end就执行
+     * 这里是一个 & 意思是不管old 还是 new 只要有一个到头了就退出循环了
+     */
     while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+      /**
+       * 如果old children的第一个node就是一个 undefined 或者 null
+       * 那就取下一个node,并且 startIndex + 1
+       * 等等..为啥某个vnode的children这个数组里面会是个null或者undefined呢..不解..总之startIndex 右移了
+       *
+       * 我们极限一点 oldStartIdx=0  oldEndIdx=0 ,上来都是0  oldch就是个空数组
+       * 第一个if进去之后
+       */
       if (isUndef(oldStartVnode)) {
         oldStartVnode = oldCh[++oldStartIdx] // Vnode has been moved left
-      } else if (isUndef(oldEndVnode)) {
+      }
+      /**
+       * 进这个if, oldEndVnode 也没有定义,因为他下面就没有任何child,然后oldEndIdx左移,就是变成-1了
+       */
+      else if (isUndef(oldEndVnode)) {
         oldEndVnode = oldCh[--oldEndIdx]
-      } else if (sameVnode(oldStartVnode, newStartVnode)) {
+      }
+      /**
+       * 新node里面有东西,那肯定不是一个vnode,进不去
+       * 从这里开始 下面4个same
+       */
+      else if (sameVnode(oldStartVnode, newStartVnode)) {
         patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx)
         oldStartVnode = oldCh[++oldStartIdx]
         newStartVnode = newCh[++newStartIdx]
-      } else if (sameVnode(oldEndVnode, newEndVnode)) {
+      }
+      /**
+       * 依然进不去
+       */
+      else if (sameVnode(oldEndVnode, newEndVnode)) {
         patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx)
         oldEndVnode = oldCh[--oldEndIdx]
         newEndVnode = newCh[--newEndIdx]
-      } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
+      }
+      /**
+       * 还是进不去
+       */
+      else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
         patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx)
         canMove && nodeOps.insertBefore(parentElm, oldStartVnode.elm, nodeOps.nextSibling(oldEndVnode.elm))
         oldStartVnode = oldCh[++oldStartIdx]
         newEndVnode = newCh[--newEndIdx]
-      } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
+      }
+      else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
         patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx)
         canMove && nodeOps.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm)
         oldEndVnode = oldCh[--oldEndIdx]
         newStartVnode = newCh[++newStartIdx]
-      } else {
-        if (isUndef(oldKeyToIdx)) oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx)
+      }
+      /**
+       * 如果oldch是个空数组的话 会直接进这里
+       */
+      else {
+        /**
+         * oldKeyToIdx 这玩意是个局部变量每次进来都会变成undefined,
+         * oldCh = [];
+         * oldStartIdx = 1
+         * oldEndIdx = -1
+         * oldKeyToIdx = {}
+         */
+        if (isUndef(oldKeyToIdx)) oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx);
+        /**
+         * 这里这个key,为甚要以新的第0个的vode key来判断,有的话就从oldkeytoindex中取 没有就
+         * @type {*}
+         */
         idxInOld = isDef(newStartVnode.key)
           ? oldKeyToIdx[newStartVnode.key]
           : findIdxInOld(newStartVnode, oldCh, oldStartIdx, oldEndIdx)
@@ -465,6 +544,8 @@ export function createPatchFunction (backend) {
         newStartVnode = newCh[++newStartIdx]
       }
     }
+
+
     if (oldStartIdx > oldEndIdx) {
       refElm = isUndef(newCh[newEndIdx + 1]) ? null : newCh[newEndIdx + 1].elm
       addVnodes(parentElm, refElm, newCh, newStartIdx, newEndIdx, insertedVnodeQueue)

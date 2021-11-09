@@ -165,14 +165,28 @@ export function lifecycleMixin (Vue: Class<Component>) {
   }
 }
 
+/**
+ * 浏览器环境下的mount
+ * @param vm 这个vm只的就是那个new出来的实例
+ * @param el
+ * @param hydrating   看来还支持水合,有点东西
+ * @returns {Component}
+ */
 export function mountComponent (
   vm: Component,
   el: ?Element,
   hydrating?: boolean
 ): Component {
   vm.$el = el
+  /**
+   * render没有定义的话,就直接给一个Vnode
+   * 这个vnode还没有看
+   */
   if (!vm.$options.render) {
     vm.$options.render = createEmptyVNode
+    /**
+     * 开发环境会报错
+     */
     if (process.env.NODE_ENV !== 'production') {
       /* istanbul ignore if */
       if ((vm.$options.template && vm.$options.template.charAt(0) !== '#') ||
@@ -191,6 +205,10 @@ export function mountComponent (
       }
     }
   }
+  /**
+   * 快要mount了
+   *
+   */
   callHook(vm, 'beforeMount')
 
   let updateComponent
@@ -213,6 +231,11 @@ export function mountComponent (
       measure(`vue ${name} patch`, startTag, endTag)
     }
   } else {
+    /**
+     * 有点懵
+     * vm._render 就是实例方法的_render 在哪里定义的呢?
+     * _render是初始化的时候 有renderMixin,render mixin中增加了对Vue.prototype的拓展,定义了这个方法,总之就是返回一个vnode
+     */
     updateComponent = () => {
       vm._update(vm._render(), hydrating)
     }

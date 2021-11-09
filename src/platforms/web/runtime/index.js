@@ -36,7 +36,14 @@ extend(Vue.options.components, platformComponents)
 
 // install platform patch function
 Vue.prototype.__patch__ = inBrowser ? patch : noop
-
+/**
+ * 这里是最终导出VUE出口了,这里定义了mount,并且调用的是core里面的内容
+ * core中init的时候只写了el这个参数,hydrating就肯定是false
+ * this 指向的是new出来的实例
+ * @param el
+ * @param hydrating
+ * @returns {*}
+ */
 // public mount method
 Vue.prototype.$mount = function (
   el?: string | Element,
