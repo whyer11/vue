@@ -61,22 +61,49 @@ export function parseHTML (html, options) {
   while (html) {
     last = html
     // Make sure we're not in a plaintext content element like script/style
+    /**
+     * 我们就比如当前是
+     * <template></template>
+     * <script></script>
+     * <style></style>
+     * 第一次进来肯定会进if
+     *
+     * 完整看完,这个
+     */
     if (!lastTag || !isPlainTextElement(lastTag)) {
+      /**
+       * 那必然是有<的所以,textEnd = 0
+       * 当然也有其他情况,html之前被substring了, < 就不是0了
+       */
       let textEnd = html.indexOf('<')
+      /**
+       * 0的时候,就是一次读取tag的开始的时候
+       * 完整看完 这个if就用来剔除注释 doctype这样的无用信息的.碰到会直接跳过
+       */
       if (textEnd === 0) {
         // Comment:
+        /**
+         * < 有可能是个注释  <-->
+         */
         if (comment.test(html)) {
+          /**
+           * 头是个注释的话,立马找--> 在哪里
+           */
           const commentEnd = html.indexOf('-->')
-
+          //如果找到注释的结尾的话,
           if (commentEnd >= 0) {
             if (options.shouldKeepComment) {
               options.comment(html.substring(4, commentEnd), index, index + commentEnd + 3)
             }
+            // 已commentEnd前进3位,结束. 这个时候html已经发生了变化
+            // <!-- -->   如果没有shouldKeepComment参数的话,就被吞掉了,不作任何处理
             advance(commentEnd + 3)
             continue
           }
         }
-
+        /**
+         * 这个函数也一样,直接吞参数.
+         */
         // http://en.wikipedia.org/wiki/Conditional_comment#Downlevel-revealed_conditional_comment
         if (conditionalComment.test(html)) {
           const conditionalEnd = html.indexOf(']>')
@@ -113,10 +140,25 @@ export function parseHTML (html, options) {
           continue
         }
       }
-
+      /**
+       * 定义了三个变量
+       */
       let text, rest, next
+      /**
+       * 这个if 说明html 有可能是 <xxx 也有可能是 xxx<xxx 反正剩下的字符串中还有 <
+       */
       if (textEnd >= 0) {
+        /**
+         * '12345678'.indexOf('4')  //3;
+         * '12345678'.slice(3) // '45678'
+         * 这么操作一把  不管是 <xxx  还是 xxxx<xxx 都变成  <xxxx
+         */
         rest = html.slice(textEnd)
+        /**
+         * 这里进了一个while, 条件是 剩下的玩意啥也不是
+         *
+         * 这里的逻辑是把 含 < 的普通 text挑出来
+         */
         while (
           !endTag.test(rest) &&
           !startTagOpen.test(rest) &&
@@ -124,25 +166,31 @@ export function parseHTML (html, options) {
           !conditionalComment.test(rest)
         ) {
           // < in plain text, be forgiving and treat it as text
+          // 这玩意啥也不是,就是一个普通<字符串,那就找下一个 <
           next = rest.indexOf('<', 1)
+          // 如果没有找到 就跳出这个while了
           if (next < 0) break
           textEnd += next
           rest = html.slice(textEnd)
         }
+
+        // 这个text 就是当html等于  xxxx<xxxx<div></div> 中的xxxx<xxxx
         text = html.substring(0, textEnd)
       }
 
       if (textEnd < 0) {
         text = html
       }
-
+      // 找到这个啥也不是text,就直接削掉html
       if (text) {
         advance(text.length)
       }
-
-      if (options.chars && text) {
+      // 这个options.chars 盲猜是生成ast的啥工具,刚才有options.comment,但是这些都无关紧要
+    if (options.chars && text) {
         options.chars(text, index - text.length, index)
       }
+
+    // 到这上线这个if基本啥也没干,碰到无用注释,和文本就跳过
     } else {
       let endTagLength = 0
       const stackedTag = lastTag.toLowerCase()
